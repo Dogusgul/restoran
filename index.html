@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lezzet Durağı ☕</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #fdf6e3; /* Krem rengi */
+    margin: 0;
+    padding: 20px;
+    color: #654321; /* Koyu kahve */
+    display: flex;
+    justify-content: center;
+  }
+  .game-container {
+    max-width: 900px;
+    width: 100%;
+    background: #fff9f0; /* Çok açık krem */
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    padding: 25px;
+  }
+  h1, h2 {
+    color: #8b4513; /* SaddleBrown */
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  button {
+    background-color: #d2691e; /* Chocolate */
+    color: white;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 5px;
+    transition: background-color 0.2s;
+  }
+  button:hover {
+    background-color: #a0522d; /* Sienna */
+  }
+  button:disabled {
+    background-color: #cd853f; /* Peru */
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  .section {
+    background-color: #f5deb3; /* Wheat */
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+  .section h2 {
+    margin-top: 0;
+    border-bottom: 2px solid #d2b48c; /* Tan */
+    padding-bottom: 8px;
+  }
+  .item-list, .table-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px; 
+    justify-content: center;
+  }
+  .item {
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #d2b48c;
+    min-width: 120px;
+    max-width: 150px; /* Menüdeki tariflerin sığması için */
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  }
+  .item .emoji { font-size: 24px; margin-bottom: 5px; }
+  .item .name { font-weight: bold; }
+  .item .count, .item .price, .item .details { font-size: 0.9em; color: #555; }
+
+  #info-bar { text-align: right; font-size: 18px; margin-bottom: 15px; }
+  #money { font-weight: bold; color: #228b22; }
+  
+  .table-area {
+    padding: 20px 0;
+    min-height: 200px; 
+    display: grid; /* DÜZENLEME: Flex yerine Grid */
+    grid-template-columns: repeat(3, 1fr); /* DÜZENLEME: 3 sütun */
+    gap: 20px; /* DÜZENLEME: Masalar arası boşluk */
+  }
+  .table {
+    width: 130px; /* Boyutları biraz artırabiliriz */
+    height: 130px;
+    background-color: #deb887; 
+    border: 4px solid #8b4513; 
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin: auto; /* Grid içinde ortalamak için */
+  }
+  .table:hover {
+    background-color: #cd853f; 
+  }
+  .table .customer-emoji {
+    font-size: 40px; 
+    margin-bottom: 5px;
+  }
+  .table .speech-bubble {
+    position: absolute;
+    bottom: 105%; 
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #87cefa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: #333;
+    font-size: 12px;
+    min-width: 100px;
+    max-width: 150px;
+    white-space: normal; 
+    word-wrap: break-word;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    z-index: 10;
+    text-align: center;
+  }
+   .table .table-status {
+    font-size: 12px;
+    font-weight: bold;
+    color: #654321;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background-color: rgba(255,255,255,0.7);
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+
+  #message-area {
+    min-height: 24px;
+    color: #d2691e;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-content {
+    background-color: #fff9f0;
+    margin: auto;
+    padding: 20px;
+    border: 2px solid #d2b48c;
+    width: 80%;
+    max-width: 400px;
+    border-radius: 10px;
+    text-align: center;
+  }
+  .modal-content input[type="number"] {
+      width: 60px;
+      padding: 8px;
+      margin: 0 10px;
+      border: 1px solid #d2b48c;
+      border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Lezzet Durağı ☕</h1>
+    <div id="info-bar">Para: <span id="money">100</span> TL</div>
+    <div id="message-area"></div>
+
+    <div class="section">
+      <h2>Malzeme Al</h2>
+      <div id="buy-materials-list" class="item-list"></div>
+    </div>
+
+    <div class="section">
+        <h2>Malzemelerim</h2>
+        <div id="player-materials-list" class="item-list">Stokta malzeme yok.</div>
+    </div>
+    
+    <div class="section">
+      <h2>Menü (Hazırlamak için tıkla)</h2>
+      <div id="menu-list" class="item-list"></div>
+    </div>
+
+    <div class="section">
+        <h2>Hazır Ürünler</h2>
+        <div id="prepared-products-list" class="item-list">Hazır ürün yok.</div>
+    </div>
+
+    <div class="section customer-area">
+      <h2>Masalar</h2>
+      <div id="tables-container" class="table-area">
+        </div>
+    </div>
+  </div>
+
+  <div id="buy-material-modal" class="modal">
+    <div class="modal-content">
+      <h2 id="buy-modal-title">Malzeme Satın Al</h2>
+      <p><span id="buy-modal-material-name"></span> (<span id="buy-modal-material-price"></span> TL/adet)</p>
+      <p>Mevcut Bakiye: <span id="buy-modal-current-money"></span> TL</p>
+      <div>
+          Kaç adet almak istersin? 
+          <input type="number" id="buy-modal-amount" value="1" min="1">
+      </div>
+      <button id="confirm-buy-btn">Satın Al</button>
+      <button onclick="closeBuyModal()">İptal</button>
+    </div>
+  </div>
+
+  <script>
+    const materialsData = {
+      coffeeBean: { name: "Kahve Çekirdeği", emoji: "☕️", price: 5 },
+      milk: { name: "Süt", emoji: "🥛", price: 3 },
+      flour: { name: "Un", emoji: "🥡", price: 4 },
+      sugar: { name: "Şeker", emoji: "🍬", price: 2 },
+      fruit: { name: "Meyve", emoji: "🍓", price: 7 },
+      chocolate: { name: "Çikolata", emoji: "🍫", price: 8 },
+      cream: { name: "Krema", emoji: "🍦", price: 6 },
+      lemon: { name: "Limon", emoji: "🍋", price: 4 }
+    };
+
+    const menuData = {
+      coffee: { 
+        name: "Kahve", 
+        emoji: "☕️", 
+        price: 15, 
+        recipe: { coffeeBean: 1, milk: 1 } 
+      },
+      cake: { 
+        name: "Kek", 
+        emoji: "🍰", 
+        price: 20, 
+        recipe: { flour: 1, sugar: 1, milk: 1 } 
+      },
+      juice: { 
+        name: "Meyve Suyu", 
+        emoji: "🥤", 
+        price: 18, 
+        recipe: { fruit: 1, sugar: 1 } 
+      },
+      mocha: {
+        name: "Mocha",
+        emoji: "☕🍫",
+        price: 25,
+        recipe: { coffeeBean: 1, milk: 1, chocolate: 1}
+      },
+      chocolateCake: {
+        name: "Çikolatalı Kek",
+        emoji: "🍰🍫",
+        price: 30,
+        recipe: { flour: 1, sugar: 1, milk: 1, chocolate: 1}
+      },
+      lemonade: {
+        name: "Limonata",
+        emoji: "🥤🍋",
+        price: 16,
+        recipe: { lemon: 1, sugar: 1} // Basit tarif
+      },
+      fruitCreamCake: {
+        name: "Meyveli Pasta",
+        emoji: "🎂🍓🍦",
+        price: 35,
+        recipe: { flour: 1, sugar: 1, cream: 1, fruit: 1}
+      }
+    };
+
+    const customerEmojis = ['🧑🏻', '👩🏽', '👨🏼‍🦳', '👵🏿', '🧔🏻', '🧕🏽', '👨🏻‍🦰', '👩🏻‍🦱'];
+    const TABLE_COUNT = 6; // Masa sayısı 6'ya çıkarıldı
+    const CUSTOMER_EAT_TIME = 5000; 
+
+    let money = 100;
+    let playerMaterials = {}; 
+    let preparedProducts = {}; 
+    let tables = []; 
+
+    const moneyEl = document.getElementById('money');
+    const messageAreaEl = document.getElementById('message-area');
+    const buyMaterialsListEl = document.getElementById('buy-materials-list');
+    const playerMaterialsListEl = document.getElementById('player-materials-list');
+    const menuListEl = document.getElementById('menu-list');
+    const preparedProductsListEl = document.getElementById('prepared-products-list');
+    const tablesContainerEl = document.getElementById('tables-container');
+    
+    const buyModal = document.getElementById('buy-material-modal');
+    const buyModalTitle = document.getElementById('buy-modal-title');
+    const buyModalMaterialName = document.getElementById('buy-modal-material-name');
+    const buyModalMaterialPrice = document.getElementById('buy-modal-material-price');
+    const buyModalCurrentMoney = document.getElementById('buy-modal-current-money');
+    const buyModalAmountInput = document.getElementById('buy-modal-amount');
+    const confirmBuyBtn = document.getElementById('confirm-buy-btn');
+    let currentMaterialToBuy = null;
+
+    function updateMoneyDisplay() {
+      moneyEl.textContent = money;
+      if(buyModal.style.display === 'flex') {
+          buyModalCurrentMoney.textContent = money;
+      }
+    }
+
+    function showMessage(msg, isError = false) {
+        messageAreaEl.textContent = msg;
+        messageAreaEl.style.color = isError ? "#c0392b" : "#d2691e";
+        setTimeout(() => messageAreaEl.textContent = "", 3000);
+    }
+
+    function renderBuyMaterials() {
+        buyMaterialsListEl.innerHTML = '';
+        for (const key in materialsData) {
+            const material = materialsData[key];
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item';
+            itemDiv.innerHTML = `
+                <div class="emoji">${material.emoji}</div>
+                <div class="name">${material.name}</div>
+                <div class="price">${material.price} TL</div>
+            `;
+            itemDiv.onclick = () => openBuyModal(key);
+            buyMaterialsListEl.appendChild(itemDiv);
+        }
+    }
+
+    function openBuyModal(materialKey) {
+        currentMaterialToBuy = materialKey;
+        const material = materialsData[materialKey];
+        buyModalTitle.textContent = `${material.name} Satın Al`;
+        buyModalMaterialName.textContent = material.name;
+        buyModalMaterialPrice.textContent = material.price;
+        buyModalAmountInput.value = 1;
+        buyModalAmountInput.max = Math.floor(money / material.price) || 1;
+        updateMoneyDisplay();
+        buyModal.style.display = 'flex';
+    }
+
+    function closeBuyModal() {
+        buyModal.style.display = 'none';
+        currentMaterialToBuy = null;
+    }
+
+    confirmBuyBtn.onclick = () => {
+        if (!currentMaterialToBuy) return;
+        const material = materialsData[currentMaterialToBuy];
+        const amount = parseInt(buyModalAmountInput.value);
+
+        if (isNaN(amount) || amount <= 0) {
+            showMessage("Lütfen geçerli bir miktar girin.", true);
+            return;
+        }
+        const totalCost = amount * material.price;
+        if (money >= totalCost) {
+            money -= totalCost;
+            playerMaterials[currentMaterialToBuy] = (playerMaterials[currentMaterialToBuy] || 0) + amount;
+            updateMoneyDisplay();
+            renderPlayerMaterials();
+            saveGame();
+            showMessage(`${amount} adet ${material.name} alındı.`);
+            closeBuyModal();
+        } else {
+            showMessage("Yeterli paranız yok!", true);
+        }
+    };
+
+    function renderPlayerMaterials() {
+        playerMaterialsListEl.innerHTML = '';
+        let hasAny = false;
+        for (const key in playerMaterials) {
+            if (playerMaterials[key] > 0) {
+                hasAny = true;
+                const material = materialsData[key];
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item';
+                itemDiv.style.cursor = 'default'; 
+                itemDiv.innerHTML = `
+                    <div class="emoji">${material.emoji}</div>
+                    <div class="name">${material.name}</div>
+                    <div class="count">Stok: ${playerMaterials[key]}</div>
+                `;
+                playerMaterialsListEl.appendChild(itemDiv);
+            }
+        }
+        if (!hasAny) playerMaterialsListEl.textContent = "Stokta malzeme yok.";
+    }
+
+    function renderMenu() {
+        menuListEl.innerHTML = '';
+        for (const key in menuData) {
+            const product = menuData[key];
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item';
+            
+            let recipeDetails = "Malzemeler: ";
+            for(const matKey in product.recipe){
+                recipeDetails += `${materialsData[matKey].emoji}x${product.recipe[matKey]} `;
+            }
+
+            itemDiv.innerHTML = `
+                <div class="emoji">${product.emoji}</div>
+                <div class="name">${product.name}</div>
+                <div class="details">${recipeDetails}</div>
+                <div class="price">Satış: ${product.price} TL</div>
+            `;
+            itemDiv.onclick = () => prepareProduct(key);
+            menuListEl.appendChild(itemDiv);
+        }
+    }
+    
+    function prepareProduct(productKey) {
+        const product = menuData[productKey];
+        for (const matKey in product.recipe) {
+            if (!playerMaterials[matKey] || playerMaterials[matKey] < product.recipe[matKey]) {
+                showMessage(`${product.name} hazırlamak için yeterli ${materialsData[matKey].name} yok!`, true);
+                return;
+            }
+        }
+        for (const matKey in product.recipe) {
+            playerMaterials[matKey] -= product.recipe[matKey];
+        }
+        preparedProducts[productKey] = (preparedProducts[productKey] || 0) + 1;
+        
+        renderPlayerMaterials();
+        renderPreparedProducts();
+        saveGame();
+        showMessage(`${product.name} hazırlandı!`);
+    }
+
+    function renderPreparedProducts() {
+        preparedProductsListEl.innerHTML = '';
+        let hasAny = false;
+        for (const key in preparedProducts) {
+            if (preparedProducts[key] > 0) {
+                hasAny = true;
+                const product = menuData[key];
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item';
+                itemDiv.style.cursor = 'default';
+                itemDiv.innerHTML = `
+                    <div class="emoji">${product.emoji}</div>
+                    <div class="name">${product.name}</div>
+                    <div class="count">Adet: ${preparedProducts[key]}</div>
+                `;
+                preparedProductsListEl.appendChild(itemDiv);
+            }
+        }
+        if (!hasAny) preparedProductsListEl.textContent = "Hazır ürün yok.";
+    }
+    
+    function initializeTables() {
+        tables = []; // Önceki masaları temizle (eğer varsa)
+        for (let i = 0; i < TABLE_COUNT; i++) {
+            tables.push({
+                id: i,
+                isOccupied: false,
+                customer: null, 
+                status: 'empty', 
+                orderTimer: null
+            });
+        }
+        renderTables();
+    }
+
+    function renderTables() {
+        tablesContainerEl.innerHTML = '';
+        tables.forEach((table, index) => {
+            const tableDiv = document.createElement('div');
+            tableDiv.className = 'table';
+            tableDiv.dataset.index = index;
+
+            const customerEmojiDiv = document.createElement('div');
+            customerEmojiDiv.className = 'customer-emoji';
+            
+            const speechBubbleDiv = document.createElement('div');
+            speechBubbleDiv.className = 'speech-bubble';
+            speechBubbleDiv.style.display = 'none';
+
+            if (table.isOccupied && table.customer) {
+                customerEmojiDiv.textContent = table.customer.emoji;
+                if (table.status === 'waiting_order') {
+                    speechBubbleDiv.textContent = `${menuData[table.customer.wants].emoji} ${menuData[table.customer.wants].name}?`;
+                    speechBubbleDiv.style.display = 'block';
+                } else if (table.status === 'eating') {
+                    speechBubbleDiv.textContent = `${menuData[table.customer.wants].emoji} Yiyor...`;
+                    speechBubbleDiv.style.display = 'block';
+                } else if (table.status === 'waiting_payment') {
+                    customerEmojiDiv.textContent = '💰'; 
+                    speechBubbleDiv.textContent = `${menuData[table.customer.wants].price} TL Lütfen!`;
+                    speechBubbleDiv.style.display = 'block';
+                }
+            } else {
+                 customerEmojiDiv.textContent = '🪑'; 
+            }
+            
+            tableDiv.appendChild(speechBubbleDiv);
+            tableDiv.appendChild(customerEmojiDiv);
+            tableDiv.onclick = () => handleTableClick(index);
+            tablesContainerEl.appendChild(tableDiv);
+        });
+    }
+
+    function handleTableClick(tableIndex) {
+        const table = tables[tableIndex];
+        if (!table.isOccupied && table.status !== 'empty') return; 
+
+        if (table.status === 'waiting_order') {
+            serveOrder(tableIndex);
+        } else if (table.status === 'waiting_payment') {
+            collectPayment(tableIndex);
+        } else if (table.status === 'empty') {
+            // Boş masaya tıklanınca bir şey yapma (veya yeni müşteri çağırma gibi bir özellik eklenebilir)
+            showMessage("Bu masa boş.", true);
+        }
+    }
+
+    function serveOrder(tableIndex) {
+        const table = tables[tableIndex];
+        if (!table || !table.customer || table.status !== 'waiting_order') return;
+        const wantedProduct = table.customer.wants;
+
+        if (preparedProducts[wantedProduct] && preparedProducts[wantedProduct] > 0) {
+            preparedProducts[wantedProduct]--;
+            
+            table.status = 'eating';
+            showMessage(`${menuData[wantedProduct].name}, ${tableIndex + 1}. masaya servis edildi.`);
+            renderPreparedProducts();
+            renderTables(); 
+            
+            clearTimeout(table.orderTimer); 
+            table.orderTimer = setTimeout(() => {
+                if (table.isOccupied && table.status === 'eating') { 
+                    table.status = 'waiting_payment';
+                    renderTables();
+                    saveGame();
+                }
+            }, CUSTOMER_EAT_TIME);
+            saveGame();
+        } else {
+            showMessage(`Stokta ${menuData[wantedProduct].name} yok!`, true);
+        }
+    }
+
+    function collectPayment(tableIndex) {
+        const table = tables[tableIndex];
+        if (!table || table.status !== 'waiting_payment') return;
+
+        money += menuData[table.customer.wants].price;
+        showMessage(`${tableIndex + 1}. masadan ${menuData[table.customer.wants].price} TL alındı.`);
+        
+        table.isOccupied = false;
+        table.customer = null;
+        table.status = 'empty';
+        clearTimeout(table.orderTimer);
+        
+        updateMoneyDisplay();
+        renderTables();
+        saveGame();
+        
+        setTimeout(() => trySpawnCustomer(), Math.random() * 2000 + 1000); // Ödeme sonrası 1-3 sn içinde yeni müşteri dene
+    }
+
+    function trySpawnCustomer() {
+        const emptyTables = tables.filter(t => !t.isOccupied);
+        if (emptyTables.length > 0) {
+            // Boş masaların indexlerini al
+            const emptyTableIndices = tables.map((table, index) => table.isOccupied ? -1 : index).filter(index => index !== -1);
+            if (emptyTableIndices.length > 0) {
+                const randomEmptyTableIndex = emptyTableIndices[Math.floor(Math.random() * emptyTableIndices.length)];
+                 spawnCustomerAtTable(randomEmptyTableIndex);
+            }
+        }
+    }
+
+    function spawnCustomerAtTable(tableIndex) {
+        if (tables[tableIndex].isOccupied) return;
+
+        const randomProductKey = Object.keys(menuData)[Math.floor(Math.random() * Object.keys(menuData).length)];
+        const randomEmoji = customerEmojis[Math.floor(Math.random() * customerEmojis.length)];
+        
+        tables[tableIndex].isOccupied = true;
+        tables[tableIndex].customer = { emoji: randomEmoji, wants: randomProductKey };
+        tables[tableIndex].status = 'waiting_order';
+        
+        renderTables();
+        saveGame();
+    }
+    
+    function saveGame() {
+        localStorage.setItem('cafeMoneyV3', money);
+        localStorage.setItem('cafePlayerMaterialsV3', JSON.stringify(playerMaterials));
+        localStorage.setItem('cafePreparedProductsV3', JSON.stringify(preparedProducts));
+        localStorage.setItem('cafeTablesV3', JSON.stringify(tables));
+    }
+
+    function loadGame() {
+        money = parseInt(localStorage.getItem('cafeMoneyV3')) || 100;
+        playerMaterials = JSON.parse(localStorage.getItem('cafePlayerMaterialsV3')) || {};
+        preparedProducts = JSON.parse(localStorage.getItem('cafePreparedProductsV3')) || {};
+        const savedTables = JSON.parse(localStorage.getItem('cafeTablesV3'));
+
+        if (savedTables && savedTables.length === TABLE_COUNT) {
+            tables = savedTables;
+            tables.forEach(table => {
+                if (table.orderTimer) clearTimeout(table.orderTimer);
+                 // Eğer müşteri yeme durumundaysa ve sayfa yenilendiyse, yeme süresini baştan başlatabiliriz
+                // veya daha karmaşık bir şekilde kalan süreyi saklayıp devam ettirebiliriz.
+                // Basitlik için, yükleme sonrası 'eating' durumundaki müşteriler hemen 'waiting_payment'e geçebilir.
+                if (table.isOccupied && table.status === 'eating') {
+                     table.status = 'waiting_payment'; // Veya yeme süresini yeniden başlat
+                }
+            });
+        } else {
+            initializeTables(); 
+        }
+        
+        updateMoneyDisplay();
+        renderPlayerMaterials();
+        renderPreparedProducts();
+        renderTables();
+
+        tables.forEach((table, index) => {
+            if (!table.isOccupied) {
+                 setTimeout(() => trySpawnCustomer(), Math.random() * 3000 + (index * 500)); 
+            }
+        });
+    }
+
+    function initGame() {
+        renderBuyMaterials();
+        renderMenu();
+        if (tables.length === 0) initializeTables(); 
+        loadGame();
+        
+        setInterval(trySpawnCustomer, 15000); // Her 15 saniyede bir yeni müşteri getirmeyi dene
+    }
+
+    window.onload = initGame;
+
+  </script>
+</body>
+</html>
