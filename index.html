@@ -7,29 +7,35 @@
 <style>
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #fdf6e3; /* Krem rengi */
+    background-color: #fdf6e3;
     margin: 0;
-    padding: 20px;
-    color: #654321; /* Koyu kahve */
+    color: #654321;
+    /* Başlangıçta ana menüyü ortalamak için flex kullanılacak, JS ile değiştirilecek */
     display: flex;
     justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 0; /* Body flex iken padding sorun yaratabilir, oyun başlayınca eklenebilir */
   }
   .game-container {
     max-width: 900px;
     width: 100%;
-    background: #fff9f0; /* Çok açık krem */
+    background: #fff9f0;
     border-radius: 12px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    padding: 25px;
+    padding: 25px; /* Oyun konteynerinin kendi iç padding'i */
+    display: none; /* Başlangıçta oyun gizli */
+    margin: 20px auto; /* Oyun gösterildiğinde ortalamak ve kenar boşluğu vermek için */
+    box-sizing: border-box; /* Padding ve border'ın width/height'e dahil olması için */
   }
   h1, h2 {
-    color: #8b4513; /* SaddleBrown */
+    color: #8b4513;
     text-align: center;
     margin-top: 0;
     margin-bottom: 10px;
   }
-  button {
-    background-color: #d2691e; /* Chocolate */
+  button, .action-button {
+    background-color: #d2691e;
     color: white;
     padding: 10px 18px;
     border: none;
@@ -39,16 +45,80 @@
     margin: 5px;
     transition: background-color 0.2s;
   }
-  button:hover {
-    background-color: #a0522d; /* Sienna */
+  button:hover, .action-button:hover {
+    background-color: #a0522d;
   }
-  button:disabled {
-    background-color: #cd853f; /* Peru */
+  button:disabled, .action-button:disabled {
+    background-color: #cd853f;
     cursor: not-allowed;
     opacity: 0.7;
   }
+  .info-bar {
+    background-color: #ecf0f1;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  }
+  #status-indicators {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 16px;
+    flex-wrap: wrap;
+  }
+  #money, #level-info, #day-info {
+    font-weight: bold;
+    color: #228b22;
+    margin: 2px 5px;
+  }
+  #level-info { color: #8b4513; }
+  #day-info { color: #2c3e50; }
+
+  #xp-bar-container {
+    width: 100%;
+    background-color: #d2b48c;
+    border-radius: 8px;
+    height: 20px;
+    position: relative;
+    overflow: hidden;
+    margin-top: 5px;
+  }
+  #xp-bar {
+    width: 0%;
+    height: 100%;
+    background-color: #5cb85c;
+    border-radius: 8px;
+    transition: width 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #xp-bar-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+  }
+
+  .tabs {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
   .section {
-    background-color: #f5deb3; /* Wheat */
+    background-color: #f5deb3;
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -56,14 +126,22 @@
   }
   .section h2 {
     margin-top: 0;
-    border-bottom: 2px solid #d2b48c; /* Tan */
+    border-bottom: 2px solid #d2b48c;
     padding-bottom: 8px;
   }
-  .item-list, .table-area {
+  .item-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px; 
+    gap: 10px;
     justify-content: center;
+  }
+   .table-area {
+    padding: 20px 0;
+    min-height: 280px; /* İki sıra masa için yükseklik yeterli olacaktır (her masa 140px + aradaki boşluk) */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Masaları 3 sütun halinde sıralar */
+    gap: 20px;
+    justify-items: center; /* Masaların kendi hücreleri içinde ortalanmasını sağlar */
   }
   .item {
     background-color: #fff;
@@ -71,57 +149,71 @@
     border-radius: 6px;
     border: 1px solid #d2b48c;
     min-width: 120px;
-    max-width: 150px; /* Menüdeki tariflerin sığması için */
+    max-width: 160px;
     text-align: center;
     cursor: pointer;
     user-select: none;
     transition: transform 0.1s, box-shadow 0.1s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
   .item:hover {
     transform: translateY(-3px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.1);
   }
   .item .emoji { font-size: 24px; margin-bottom: 5px; }
-  .item .name { font-weight: bold; }
-  .item .count, .item .price, .item .details { font-size: 0.9em; color: #555; }
+  .item .name { font-weight: bold; margin-bottom: 3px; }
+  .item .count, .item .price, .item .details { font-size: 0.85em; color: #555; margin-top: 3px; }
+  .item .details { line-height: 1.3; }
 
-  #info-bar { text-align: right; font-size: 18px; margin-bottom: 15px; }
-  #money { font-weight: bold; color: #228b22; }
-  
-  .table-area {
-    padding: 20px 0;
-    min-height: 200px; 
-    display: grid; /* DÜZENLEME: Flex yerine Grid */
-    grid-template-columns: repeat(3, 1fr); /* DÜZENLEME: 3 sütun */
-    gap: 20px; /* DÜZENLEME: Masalar arası boşluk */
-  }
   .table {
-    width: 130px; /* Boyutları biraz artırabiliriz */
-    height: 130px;
-    background-color: #deb887; 
-    border: 4px solid #8b4513; 
+    width: 130px;
+    height: 140px;
+    background-color: #deb887;
+    border: 4px solid #8b4513;
     border-radius: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     position: relative;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin: auto; /* Grid içinde ortalamak için */
+    margin: auto;
+    padding: 5px;
+    box-sizing: border-box;
   }
   .table:hover {
-    background-color: #cd853f; 
+    background-color: #cd853f;
+  }
+  .patience-bar-container {
+    width: 90%;
+    height: 10px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    order: 2;
+  }
+  .patience-bar {
+    height: 100%;
+    width: 100%;
+    background-color: #4CAF50;
+    border-radius: 4px;
+    transition: width 0.5s linear, background-color 0.5s linear;
   }
   .table .customer-emoji {
-    font-size: 40px; 
+    font-size: 40px;
+    order: 1;
     margin-bottom: 5px;
   }
   .table .speech-bubble {
     position: absolute;
-    bottom: 105%; 
+    bottom: 100%;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateY(-5px);
     background-color: #87cefa;
     padding: 6px 10px;
     border-radius: 6px;
@@ -129,22 +221,11 @@
     font-size: 12px;
     min-width: 100px;
     max-width: 150px;
-    white-space: normal; 
+    white-space: normal;
     word-wrap: break-word;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     z-index: 10;
     text-align: center;
-  }
-   .table .table-status {
-    font-size: 12px;
-    font-weight: bold;
-    color: #654321;
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    background-color: rgba(255,255,255,0.7);
-    padding: 2px 4px;
-    border-radius: 3px;
   }
 
   #message-area {
@@ -152,31 +233,48 @@
     color: #d2691e;
     font-weight: bold;
     margin-top: 10px;
+    text-align: center;
   }
 
+  #daily-quest-area {
+    padding: 10px;
+    background-color: #e8f8f5;
+    border: 1px solid #a3e4d7;
+    border-radius: 6px;
+    margin-bottom: 15px;
+  }
+  #daily-quest-area h3 { margin-top:0; color: #1abc9c; }
+  #quest-text { font-weight: bold; }
+  #quest-progress { color: #16a085; }
+
   .modal {
-    display: none;
+    display: none; /* Varsayılan olarak gizli */
     position: fixed;
-    z-index: 100;
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.4);
+    background-color: rgba(0,0,0,0.5);
     align-items: center;
     justify-content: center;
+  }
+  #main-menu-modal.modal {
+      background-color: rgba(0,0,0,0.7);
   }
   .modal-content {
     background-color: #fff9f0;
     margin: auto;
-    padding: 20px;
+    padding: 25px;
     border: 2px solid #d2b48c;
-    width: 80%;
-    max-width: 400px;
+    width: 90%;
+    max-width: 450px;
     border-radius: 10px;
     text-align: center;
+    position: relative;
   }
+  .modal-content h2 { margin-bottom: 15px; }
   .modal-content input[type="number"] {
       width: 60px;
       padding: 8px;
@@ -184,13 +282,68 @@
       border: 1px solid #d2b48c;
       border-radius: 4px;
   }
+  .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .close-btn:hover,
+  .close-btn:focus {
+    color: black;
+    text-decoration: none;
+  }
+  .upgrade-item {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    text-align: left;
+    overflow: hidden; /* Butonun kaymasını engellemek için */
+  }
+  .upgrade-item p { margin: 5px 0; }
+  .upgrade-item button { float: right; }
 </style>
 </head>
 <body>
+
+  <div id="main-menu-modal" class="modal" style="display: flex;">
+    <div class="modal-content" style="text-align: center;">
+        <h1>Lezzet Durağı ☕</h1>
+        <p>Kafeni işletmeye hazır mısın?</p>
+        <button class="action-button" id="start-game-btn" style="padding: 15px 30px; font-size: 20px;">Oyuna Başla!</button>
+    </div>
+  </div>
+
   <div class="game-container">
     <h1>Lezzet Durağı ☕</h1>
-    <div id="info-bar">Para: <span id="money">100</span> TL</div>
+    <div class="info-bar">
+      <div id="status-indicators">
+        <div id="day-info">Gün: 1</div>
+        <div id="money">Para: 100 TL</div>
+        <div id="level-info">Seviye: 1</div>
+      </div>
+      <div id="xp-bar-container">
+        <div id="xp-bar"></div>
+        <div id="xp-bar-text">0/100 XP</div>
+      </div>
+    </div>
     <div id="message-area"></div>
+
+    <div class="tabs">
+        <button class="action-button" onclick="openModal('upgrades-modal')">Geliştirmeler</button>
+    </div>
+
+    <div id="daily-quest-area" class="section">
+      <h3>Günün Görevi</h3>
+      <p id="quest-text"></p>
+      <p>İlerleme: <span id="quest-progress"></span></p>
+      <p>Ödül: <span id="quest-reward"></span></p>
+    </div>
 
     <div class="section">
       <h2>Malzeme Al</h2>
@@ -201,9 +354,9 @@
         <h2>Malzemelerim</h2>
         <div id="player-materials-list" class="item-list">Stokta malzeme yok.</div>
     </div>
-    
+
     <div class="section">
-      <h2>Menü (Hazırlamak için tıkla)</h2>
+      <h2>Menü</h2>
       <div id="menu-list" class="item-list"></div>
     </div>
 
@@ -214,99 +367,103 @@
 
     <div class="section customer-area">
       <h2>Masalar</h2>
-      <div id="tables-container" class="table-area">
-        </div>
+      <div id="tables-container" class="table-area"></div>
     </div>
   </div>
 
   <div id="buy-material-modal" class="modal">
     <div class="modal-content">
+      <span class="close-btn" onclick="closeModal('buy-material-modal')">&times;</span>
       <h2 id="buy-modal-title">Malzeme Satın Al</h2>
       <p><span id="buy-modal-material-name"></span> (<span id="buy-modal-material-price"></span> TL/adet)</p>
       <p>Mevcut Bakiye: <span id="buy-modal-current-money"></span> TL</p>
       <div>
-          Kaç adet almak istersin? 
+          Kaç adet almak istersin?
           <input type="number" id="buy-modal-amount" value="1" min="1">
       </div>
       <button id="confirm-buy-btn">Satın Al</button>
-      <button onclick="closeBuyModal()">İptal</button>
+      <button onclick="closeModal('buy-material-modal')">İptal</button>
     </div>
   </div>
 
+  <div id="upgrades-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal('upgrades-modal')">&times;</span>
+      <h2>Dükkan Geliştirmeleri</h2>
+      <div id="upgrades-list"></div>
+    </div>
+  </div>
+
+  <audio id="arkaplanMuzik" loop>
+    <source src="arkaplan-muzik.mp3" type="audio/mpeg">
+    Tarayıcınız ses etiketini desteklemiyor. Lütfen modern bir tarayıcı kullanın.
+  </audio>
+
   <script>
     const materialsData = {
-      coffeeBean: { name: "Kahve Çekirdeği", emoji: "☕️", price: 5 },
-      milk: { name: "Süt", emoji: "🥛", price: 3 },
-      flour: { name: "Un", emoji: "🥡", price: 4 },
-      sugar: { name: "Şeker", emoji: "🍬", price: 2 },
-      fruit: { name: "Meyve", emoji: "🍓", price: 7 },
-      chocolate: { name: "Çikolata", emoji: "🍫", price: 8 },
-      cream: { name: "Krema", emoji: "🍦", price: 6 },
-      lemon: { name: "Limon", emoji: "🍋", price: 4 }
+      coffeeBean: { name: "Kahve Çekirdeği", emoji: "☕️", price: 5, xp: 1 },
+      milk: { name: "Süt", emoji: "🥛", price: 3, xp: 1 },
+      flour: { name: "Un", emoji: "🥡", price: 4, xp: 1 },
+      sugar: { name: "Şeker", emoji: "🍬", price: 2, xp: 1 },
+      fruit: { name: "Meyve", emoji: "🍓", price: 7, xp: 2 },
+      chocolate: { name: "Çikolata", emoji: "🍫", price: 8, xp: 2 },
+      cream: { name: "Krema", emoji: "🍦", price: 6, xp: 2 },
+      lemon: { name: "Limon", emoji: "🍋", price: 4, xp: 1 }
     };
 
     const menuData = {
-      coffee: { 
-        name: "Kahve", 
-        emoji: "☕️", 
-        price: 15, 
-        recipe: { coffeeBean: 1, milk: 1 } 
-      },
-      cake: { 
-        name: "Kek", 
-        emoji: "🍰", 
-        price: 20, 
-        recipe: { flour: 1, sugar: 1, milk: 1 } 
-      },
-      juice: { 
-        name: "Meyve Suyu", 
-        emoji: "🥤", 
-        price: 18, 
-        recipe: { fruit: 1, sugar: 1 } 
-      },
-      mocha: {
-        name: "Mocha",
-        emoji: "☕🍫",
-        price: 25,
-        recipe: { coffeeBean: 1, milk: 1, chocolate: 1}
-      },
-      chocolateCake: {
-        name: "Çikolatalı Kek",
-        emoji: "🍰🍫",
-        price: 30,
-        recipe: { flour: 1, sugar: 1, milk: 1, chocolate: 1}
-      },
-      lemonade: {
-        name: "Limonata",
-        emoji: "🥤🍋",
-        price: 16,
-        recipe: { lemon: 1, sugar: 1} // Basit tarif
-      },
-      fruitCreamCake: {
-        name: "Meyveli Pasta",
-        emoji: "🎂🍓🍦",
-        price: 35,
-        recipe: { flour: 1, sugar: 1, cream: 1, fruit: 1}
-      }
+      coffee: { name: "Kahve", emoji: "☕️", price: 15, recipe: { coffeeBean: 1, milk: 1 }, xp: 5 },
+      cake: { name: "Kek", emoji: "🍰", price: 20, recipe: { flour: 1, sugar: 1, milk: 1 }, xp: 8 },
+      juice: { name: "Meyve Suyu", emoji: "🥤", price: 18, recipe: { fruit: 1, sugar: 1 }, xp: 6 },
+      mocha: { name: "Mocha", emoji: "☕🍫", price: 25, recipe: { coffeeBean: 1, milk: 1, chocolate: 1 }, xp: 10 },
+      chocolateCake: { name: "Çikolatalı Kek", emoji: "🍰🍫", price: 30, recipe: { flour: 1, sugar: 1, milk: 1, chocolate: 1 }, xp: 12 },
+      lemonade: { name: "Limonata", emoji: "🥤🍋", price: 16, recipe: { lemon: 1, sugar: 1 }, xp: 7 },
+      fruitCreamCake: { name: "Meyveli Pasta", emoji: "🎂🍓🍦", price: 35, recipe: { flour: 1, sugar: 1, cream: 1, fruit: 1 }, xp: 15 }
     };
 
-    const customerEmojis = ['🧑🏻', '👩🏽', '👨🏼‍🦳', '👵🏿', '🧔🏻', '🧕🏽', '👨🏻‍🦰', '👩🏻‍🦱'];
-    const TABLE_COUNT = 6; // Masa sayısı 6'ya çıkarıldı
-    const CUSTOMER_EAT_TIME = 5000; 
+    let upgradesData = {
+        fastService: { name: "Hızlı Servis Eğitimi", cost: 200, description: "Müşteri yeme süresini %20 azaltır.", purchased: false, apply: () => { CUSTOMER_EAT_TIME_BASE = Math.max(1000, CUSTOMER_EAT_TIME_BASE * 0.8); CUSTOMER_EAT_TIME = CUSTOMER_EAT_TIME_BASE;} },
+        attractiveSign: { name: "Çekici Tabela", cost: 300, description: "Yeni müşteri gelme süresini %20 kısaltır.", purchased: false, apply: () => { showMessage("Tabelan daha çok müşteri çekiyor! Müşteriler daha sık gelecek.", false); } },
+    };
+
+    const questsData = [
+        { id: 'prepare_3_coffees', text: "3 Kahve Hazırla", type: 'prepare', target: 'coffee', goal: 3, reward: { money: 30, xp: 20 } },
+        { id: 'earn_100_money', text: "Toplam 100 TL Kazan (Bu görev aktifken)", type: 'earn', goal: 100, reward: { money: 20, xp: 30 } },
+        { id: 'sell_2_cakes', text: "2 Kek Sat", type: 'sell', target: 'cake', goal: 2, reward: { money: 40, xp: 25 } },
+        { id: 'prepare_5_juices', text: "5 Meyve Suyu Hazırla", type: 'prepare', target: 'juice', goal: 5, reward: { money: 50, xp: 35 } },
+        { id: 'serve_5_customers', text: "Toplam 5 Müşteriye Servis Yap", type: 'serve', goal: 5, reward: { money: 60, xp: 40 } },
+    ];
+
+    const customerEmojis = ['🧑🏻', '👩🏽', '👨🏼‍🦳', '👵', '🧔🏻', '🧕🏽', '👨🏻‍🦰', '👩🏻‍🦱'];
+    const TABLE_COUNT = 6;
+    let CUSTOMER_EAT_TIME_BASE = 7000;
+    let CUSTOMER_EAT_TIME = CUSTOMER_EAT_TIME_BASE;
+    const CUSTOMER_PATIENCE_TOTAL = 60000;
 
     let money = 100;
-    let playerMaterials = {}; 
-    let preparedProducts = {}; 
-    let tables = []; 
+    let level = 1;
+    let xp = 0;
+    let xpToNextLevel = 100;
+    let gameDay = 1;
+    let playerMaterials = {};
+    let preparedProducts = {};
+    let tables = [];
+    let currentQuest = null;
+    let questProgress = 0;
+    let moneyEarnedForQuest = 0;
+    let customersServedForQuest = 0;
 
     const moneyEl = document.getElementById('money');
+    const levelInfoEl = document.getElementById('level-info');
+    const xpBarEl = document.getElementById('xp-bar');
+    const xpBarTextEl = document.getElementById('xp-bar-text');
+    const dayInfoEl = document.getElementById('day-info');
     const messageAreaEl = document.getElementById('message-area');
     const buyMaterialsListEl = document.getElementById('buy-materials-list');
     const playerMaterialsListEl = document.getElementById('player-materials-list');
     const menuListEl = document.getElementById('menu-list');
     const preparedProductsListEl = document.getElementById('prepared-products-list');
     const tablesContainerEl = document.getElementById('tables-container');
-    
     const buyModal = document.getElementById('buy-material-modal');
     const buyModalTitle = document.getElementById('buy-modal-title');
     const buyModalMaterialName = document.getElementById('buy-modal-material-name');
@@ -314,13 +471,49 @@
     const buyModalCurrentMoney = document.getElementById('buy-modal-current-money');
     const buyModalAmountInput = document.getElementById('buy-modal-amount');
     const confirmBuyBtn = document.getElementById('confirm-buy-btn');
+    const upgradesListEl = document.getElementById('upgrades-list');
+    const questTextEl = document.getElementById('quest-text');
+    const questProgressEl = document.getElementById('quest-progress');
+    const questRewardEl = document.getElementById('quest-reward');
+
+    const mainMenuModal = document.getElementById('main-menu-modal');
+    const startGameBtn = document.getElementById('start-game-btn');
+    const gameContainer = document.querySelector('.game-container');
+
     let currentMaterialToBuy = null;
+    // customerSpawnTimer kaldırıldı
+    let dayTimer = null;
+    const DAY_DURATION = 5 * 60 * 1000; // 5 dakika
+
+    function addXP(amount) {
+        if (isNaN(amount) || amount <= 0) return;
+        xp += amount;
+        while (xp >= xpToNextLevel) {
+            level++;
+            xp -= xpToNextLevel;
+            xpToNextLevel = Math.floor(xpToNextLevel * 1.25);
+            showMessage(`🎉 Seviye atladın! Yeni seviyen: ${level} 🎉`, false);
+            renderUpgrades();
+        }
+        updateXPBarDisplay();
+    }
+
+    function updateXPBarDisplay() {
+        levelInfoEl.textContent = `Seviye: ${level}`;
+        const progress = Math.min((xp / xpToNextLevel) * 100, 100);
+        xpBarEl.style.width = `${progress}%`;
+        xpBarTextEl.textContent = `${Math.floor(xp)}/${xpToNextLevel} XP`;
+    }
 
     function updateMoneyDisplay() {
-      moneyEl.textContent = money;
+      moneyEl.textContent = `Para: ${money} TL`;
       if(buyModal.style.display === 'flex') {
           buyModalCurrentMoney.textContent = money;
       }
+    }
+
+    function updateDayDisplay() {
+        if(dayInfoEl) dayInfoEl.textContent = `Gün: ${gameDay}`;
     }
 
     function showMessage(msg, isError = false) {
@@ -357,9 +550,9 @@
         buyModal.style.display = 'flex';
     }
 
-    function closeBuyModal() {
-        buyModal.style.display = 'none';
-        currentMaterialToBuy = null;
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+        if (modalId === 'buy-material-modal') currentMaterialToBuy = null;
     }
 
     confirmBuyBtn.onclick = () => {
@@ -375,11 +568,12 @@
         if (money >= totalCost) {
             money -= totalCost;
             playerMaterials[currentMaterialToBuy] = (playerMaterials[currentMaterialToBuy] || 0) + amount;
+            addXP(materialsData[currentMaterialToBuy].xp * amount);
             updateMoneyDisplay();
             renderPlayerMaterials();
             saveGame();
             showMessage(`${amount} adet ${material.name} alındı.`);
-            closeBuyModal();
+            closeModal('buy-material-modal');
         } else {
             showMessage("Yeterli paranız yok!", true);
         }
@@ -394,7 +588,7 @@
                 const material = materialsData[key];
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'item';
-                itemDiv.style.cursor = 'default'; 
+                itemDiv.style.cursor = 'default';
                 itemDiv.innerHTML = `
                     <div class="emoji">${material.emoji}</div>
                     <div class="name">${material.name}</div>
@@ -407,45 +601,76 @@
     }
 
     function renderMenu() {
-        menuListEl.innerHTML = '';
-        for (const key in menuData) {
-            const product = menuData[key];
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'item';
-            
-            let recipeDetails = "Malzemeler: ";
-            for(const matKey in product.recipe){
-                recipeDetails += `${materialsData[matKey].emoji}x${product.recipe[matKey]} `;
-            }
+    menuListEl.innerHTML = '';
+    for (const key in menuData) {
+        const product = menuData[key];
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'item';
 
-            itemDiv.innerHTML = `
-                <div class="emoji">${product.emoji}</div>
-                <div class="name">${product.name}</div>
-                <div class="details">${recipeDetails}</div>
-                <div class="price">Satış: ${product.price} TL</div>
-            `;
-            itemDiv.onclick = () => prepareProduct(key);
-            menuListEl.appendChild(itemDiv);
+        let recipeDetailsHtml = "<strong>Malzemeler:</strong>";
+        const ingredientKeys = Object.keys(product.recipe);
+        const numIngredients = ingredientKeys.length;
+
+        if (numIngredients >= 3) { 
+            recipeDetailsHtml += "<br>"; 
+
+            let ingredientsListString = "";
+            ingredientKeys.forEach((matKey, index) => {
+                ingredientsListString += `${materialsData[matKey].emoji}x${product.recipe[matKey]}`;
+                if (index < numIngredients - 1) {
+                    ingredientsListString += "<br>"; 
+                }
+            });
+            recipeDetailsHtml += `<div style="text-align: left; display: inline-block; line-height: 1.3;">${ingredientsListString}</div>`;
+
+        } else { 
+            recipeDetailsHtml += " "; 
+            ingredientKeys.forEach((matKey, index) => {
+                recipeDetailsHtml += `${materialsData[matKey].emoji}x${product.recipe[matKey]}`;
+                if (index < numIngredients - 1) {
+                    recipeDetailsHtml += " "; 
+                }
+            });
         }
+
+        let displayName = product.name;
+        let displayPrice = product.price;
+
+        itemDiv.innerHTML = `
+            <div class="emoji">${product.emoji}</div>
+            <div class="name">${displayName}</div>
+            <div class="details">${recipeDetailsHtml}</div>
+            <div class="price">Satış: ${displayPrice} TL</div>
+        `;
+        itemDiv.onclick = () => prepareProduct(key);
+        menuListEl.appendChild(itemDiv);
     }
-    
+}
+
     function prepareProduct(productKey) {
         const product = menuData[productKey];
         for (const matKey in product.recipe) {
             if (!playerMaterials[matKey] || playerMaterials[matKey] < product.recipe[matKey]) {
-                showMessage(`${product.name} hazırlamak için yeterli ${materialsData[matKey].name} yok!`, true);
+                showMessage(`${product.name} için yeterli ${materialsData[matKey].name} yok!`, true);
                 return;
             }
         }
         for (const matKey in product.recipe) {
             playerMaterials[matKey] -= product.recipe[matKey];
         }
-        preparedProducts[productKey] = (preparedProducts[productKey] || 0) + 1;
-        
+
+        let productNameForInventory = productKey;
+        let productXP = product.xp || 5;
+        let messageProductName = product.name;
+
+        preparedProducts[productNameForInventory] = (preparedProducts[productNameForInventory] || 0) + 1;
+        addXP(productXP);
+
         renderPlayerMaterials();
         renderPreparedProducts();
+        updateQuestProgressOnAction('prepare', productKey, 1);
         saveGame();
-        showMessage(`${product.name} hazırlandı!`);
+        showMessage(`${messageProductName} hazırlandı!`);
     }
 
     function renderPreparedProducts() {
@@ -454,13 +679,15 @@
         for (const key in preparedProducts) {
             if (preparedProducts[key] > 0) {
                 hasAny = true;
-                const product = menuData[key];
+                const productData = menuData[key];
+                const displayName = productData.name;
+
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'item';
                 itemDiv.style.cursor = 'default';
                 itemDiv.innerHTML = `
-                    <div class="emoji">${product.emoji}</div>
-                    <div class="name">${product.name}</div>
+                    <div class="emoji">${productData.emoji}</div>
+                    <div class="name">${displayName}</div>
                     <div class="count">Adet: ${preparedProducts[key]}</div>
                 `;
                 preparedProductsListEl.appendChild(itemDiv);
@@ -468,19 +695,22 @@
         }
         if (!hasAny) preparedProductsListEl.textContent = "Hazır ürün yok.";
     }
-    
+
     function initializeTables() {
-        tables = []; // Önceki masaları temizle (eğer varsa)
+        tables = [];
         for (let i = 0; i < TABLE_COUNT; i++) {
             tables.push({
                 id: i,
                 isOccupied: false,
-                customer: null, 
-                status: 'empty', 
-                orderTimer: null
+                customer: null,
+                status: 'empty',
+                orderTimer: null,
+                patience: 100,
+                patienceTimer: null,
+                lastStatusChangeTime: 0,
+                customerSpawnTimerId: null 
             });
         }
-        renderTables();
     }
 
     function renderTables() {
@@ -490,30 +720,49 @@
             tableDiv.className = 'table';
             tableDiv.dataset.index = index;
 
+            const patienceBarContainer = document.createElement('div');
+            patienceBarContainer.className = 'patience-bar-container';
+            patienceBarContainer.style.display = 'none';
+
+            const patienceBar = document.createElement('div');
+            patienceBar.className = 'patience-bar';
+
+            patienceBarContainer.appendChild(patienceBar);
+            tableDiv.appendChild(patienceBarContainer);
+
             const customerEmojiDiv = document.createElement('div');
             customerEmojiDiv.className = 'customer-emoji';
-            
+
             const speechBubbleDiv = document.createElement('div');
             speechBubbleDiv.className = 'speech-bubble';
             speechBubbleDiv.style.display = 'none';
 
             if (table.isOccupied && table.customer) {
                 customerEmojiDiv.textContent = table.customer.emoji;
+                let wantedItemName = menuData[table.customer.wants].name;
+                let wantedItemEmoji = menuData[table.customer.wants].emoji;
+                let priceToDisplay = menuData[table.customer.wants].price;
+
                 if (table.status === 'waiting_order') {
-                    speechBubbleDiv.textContent = `${menuData[table.customer.wants].emoji} ${menuData[table.customer.wants].name}?`;
+                    speechBubbleDiv.textContent = `${wantedItemEmoji} ${wantedItemName}?`;
                     speechBubbleDiv.style.display = 'block';
+                    patienceBarContainer.style.display = 'block';
+                    patienceBar.style.width = `${table.patience}%`;
+                     if (table.patience < 30) patienceBar.style.backgroundColor = '#e74c3c';
+                    else if (table.patience < 60) patienceBar.style.backgroundColor = '#f39c12';
+                    else patienceBar.style.backgroundColor = '#4CAF50';
                 } else if (table.status === 'eating') {
-                    speechBubbleDiv.textContent = `${menuData[table.customer.wants].emoji} Yiyor...`;
+                    speechBubbleDiv.textContent = `${wantedItemEmoji} Yiyor...`;
                     speechBubbleDiv.style.display = 'block';
                 } else if (table.status === 'waiting_payment') {
-                    customerEmojiDiv.textContent = '💰'; 
-                    speechBubbleDiv.textContent = `${menuData[table.customer.wants].price} TL Lütfen!`;
+                    customerEmojiDiv.textContent = '💰';
+                    speechBubbleDiv.textContent = `${priceToDisplay} TL Lütfen!`;
                     speechBubbleDiv.style.display = 'block';
                 }
             } else {
-                 customerEmojiDiv.textContent = '🪑'; 
+                 customerEmojiDiv.textContent = '🪑';
             }
-            
+
             tableDiv.appendChild(speechBubbleDiv);
             tableDiv.appendChild(customerEmojiDiv);
             tableDiv.onclick = () => handleTableClick(index);
@@ -523,137 +772,452 @@
 
     function handleTableClick(tableIndex) {
         const table = tables[tableIndex];
-        if (!table.isOccupied && table.status !== 'empty') return; 
+        if (!table || (!table.isOccupied && table.status !== 'empty')) return;
+
 
         if (table.status === 'waiting_order') {
             serveOrder(tableIndex);
         } else if (table.status === 'waiting_payment') {
             collectPayment(tableIndex);
-        } else if (table.status === 'empty') {
-            // Boş masaya tıklanınca bir şey yapma (veya yeni müşteri çağırma gibi bir özellik eklenebilir)
-            showMessage("Bu masa boş.", true);
         }
     }
 
     function serveOrder(tableIndex) {
         const table = tables[tableIndex];
         if (!table || !table.customer || table.status !== 'waiting_order') return;
-        const wantedProduct = table.customer.wants;
 
-        if (preparedProducts[wantedProduct] && preparedProducts[wantedProduct] > 0) {
-            preparedProducts[wantedProduct]--;
-            
-            table.status = 'eating';
-            showMessage(`${menuData[wantedProduct].name}, ${tableIndex + 1}. masaya servis edildi.`);
-            renderPreparedProducts();
-            renderTables(); 
-            
-            clearTimeout(table.orderTimer); 
-            table.orderTimer = setTimeout(() => {
-                if (table.isOccupied && table.status === 'eating') { 
-                    table.status = 'waiting_payment';
-                    renderTables();
-                    saveGame();
-                }
-            }, CUSTOMER_EAT_TIME);
-            saveGame();
-        } else {
-            showMessage(`Stokta ${menuData[wantedProduct].name} yok!`, true);
+        let productKeyToServe = table.customer.wants;
+        let inventoryKey = productKeyToServe;
+        let productNameForMessage = menuData[productKeyToServe].name;
+
+        if (!preparedProducts[inventoryKey] || preparedProducts[inventoryKey] <= 0) {
+            showMessage(`Stokta ${menuData[productKeyToServe].name} yok!`, true);
+            return;
         }
+
+        preparedProducts[inventoryKey]--;
+
+        table.status = 'eating';
+        table.lastStatusChangeTime = Date.now();
+        clearTimeout(table.patienceTimer);
+        const patienceContainerDiv = tablesContainerEl.children[tableIndex]?.querySelector('.patience-bar-container');
+        if(patienceContainerDiv) patienceContainerDiv.style.display = 'none';
+
+        showMessage(`${productNameForMessage}, ${tableIndex + 1}. masaya servis edildi.`);
+        renderPreparedProducts();
+        renderTables();
+
+        updateQuestProgressOnAction('serve', 'any', 1);
+
+        clearTimeout(table.orderTimer);
+        table.orderTimer = setTimeout(() => {
+            if (table.isOccupied && table.status === 'eating') {
+                table.status = 'waiting_payment';
+                renderTables();
+                saveGame();
+            }
+        }, CUSTOMER_EAT_TIME);
+        saveGame();
+    }
+
+    function startPatienceTimer(tableIndex) {
+        const table = tables[tableIndex];
+        if (!table || !table.isOccupied || table.status !== 'waiting_order') return;
+
+        table.patience = 100;
+        table.lastStatusChangeTime = Date.now();
+        const patienceBarEl = tablesContainerEl.children[tableIndex]?.querySelector('.patience-bar');
+        const patienceContainerEl = tablesContainerEl.children[tableIndex]?.querySelector('.patience-bar-container');
+        if(patienceContainerEl) patienceContainerEl.style.display = 'block';
+        if(patienceBarEl) patienceBarEl.style.width = '100%';
+
+        clearTimeout(table.patienceTimer);
+        table.patienceTimer = setInterval(() => {
+            if (table.isOccupied && table.status === 'waiting_order') {
+                const CUST_PATIENCE_DECREASE_RATE = 100 / (CUSTOMER_PATIENCE_TOTAL / 1000);
+                table.patience -= CUST_PATIENCE_DECREASE_RATE;
+
+                if (patienceBarEl) {
+                    patienceBarEl.style.width = `${Math.max(0, table.patience)}%`;
+                    if (table.patience < 30) patienceBarEl.style.backgroundColor = '#e74c3c';
+                    else if (table.patience < 60) patienceBarEl.style.backgroundColor = '#f39c12';
+                    else patienceBarEl.style.backgroundColor = '#4CAF50';
+                }
+
+                if (table.patience <= 0) {
+                    customerLeavesAngrily(tableIndex);
+                }
+            } else {
+                clearTimeout(table.patienceTimer);
+                 if(patienceContainerEl) patienceContainerEl.style.display = 'none';
+            }
+        }, 1000);
+    }
+
+    function customerLeavesAngrily(tableIndex) {
+        const table = tables[tableIndex];
+        if (!table || !table.isOccupied) return;
+
+        showMessage(`${tableIndex + 1}. masadaki müşteri sabrı tükendi ve gitti!`, true);
+
+        table.isOccupied = false;
+        table.customer = null;
+        table.status = 'empty';
+        clearTimeout(table.orderTimer);
+        clearTimeout(table.patienceTimer);
+        table.patience = 100;
+
+        renderTables();
+        scheduleNextCustomerForTable(tableIndex); 
+        saveGame();
     }
 
     function collectPayment(tableIndex) {
         const table = tables[tableIndex];
         if (!table || table.status !== 'waiting_payment') return;
 
-        money += menuData[table.customer.wants].price;
-        showMessage(`${tableIndex + 1}. masadan ${menuData[table.customer.wants].price} TL alındı.`);
-        
+        let productKey = table.customer.wants;
+        let earnedAmount = menuData[productKey].price;
+        let earnedXp = Math.floor(earnedAmount / 2) || 5;
+
+        money += earnedAmount;
+        addXP(earnedXp);
+
+        showMessage(`${tableIndex + 1}. masadan ${earnedAmount} TL alındı.`);
+        updateQuestProgressOnAction('earn', 'any', earnedAmount);
+        updateQuestProgressOnAction('sell', table.customer.wants, 1);
+
         table.isOccupied = false;
         table.customer = null;
         table.status = 'empty';
         clearTimeout(table.orderTimer);
-        
+        clearTimeout(table.patienceTimer);
+        table.patience = 100;
+
         updateMoneyDisplay();
         renderTables();
+        scheduleNextCustomerForTable(tableIndex); 
         saveGame();
-        
-        setTimeout(() => trySpawnCustomer(), Math.random() * 2000 + 1000); // Ödeme sonrası 1-3 sn içinde yeni müşteri dene
     }
 
-    function trySpawnCustomer() {
-        const emptyTables = tables.filter(t => !t.isOccupied);
-        if (emptyTables.length > 0) {
-            // Boş masaların indexlerini al
-            const emptyTableIndices = tables.map((table, index) => table.isOccupied ? -1 : index).filter(index => index !== -1);
-            if (emptyTableIndices.length > 0) {
-                const randomEmptyTableIndex = emptyTableIndices[Math.floor(Math.random() * emptyTableIndices.length)];
-                 spawnCustomerAtTable(randomEmptyTableIndex);
-            }
+    function calculateCustomerSpawnInterval() {
+        let minSpawn = 5000; 
+        let maxSpawn = 30000; 
+
+        if (upgradesData.attractiveSign && upgradesData.attractiveSign.purchased) {
+            minSpawn *= 0.8;
+            maxSpawn *= 0.8;
+        }
+        return Math.random() * (maxSpawn - minSpawn) + minSpawn;
+    }
+
+    function scheduleNextCustomerForTable(tableIndex) {
+        const table = tables[tableIndex];
+        if (!table) return;
+
+        if (table.customerSpawnTimerId) {
+            clearTimeout(table.customerSpawnTimerId);
+        }
+        const interval = calculateCustomerSpawnInterval();
+        table.customerSpawnTimerId = setTimeout(() => {
+            trySpawnCustomerAtSpecificTable(tableIndex);
+        }, interval);
+    }
+
+    function trySpawnCustomerAtSpecificTable(tableIndex) {
+        const table = tables[tableIndex];
+        if (table && !table.isOccupied && gameContainer.style.display === 'block') { 
+            spawnCustomerAtTable(tableIndex);
         }
     }
 
-    function spawnCustomerAtTable(tableIndex) {
+    function spawnCustomerAtTable(tableIndex) { 
         if (tables[tableIndex].isOccupied) return;
 
         const randomProductKey = Object.keys(menuData)[Math.floor(Math.random() * Object.keys(menuData).length)];
         const randomEmoji = customerEmojis[Math.floor(Math.random() * customerEmojis.length)];
-        
+
         tables[tableIndex].isOccupied = true;
         tables[tableIndex].customer = { emoji: randomEmoji, wants: randomProductKey };
         tables[tableIndex].status = 'waiting_order';
-        
+        tables[tableIndex].lastStatusChangeTime = Date.now();
+        startPatienceTimer(tableIndex);
+
         renderTables();
         saveGame();
     }
-    
+
+    function assignNewQuest() {
+        const availableQuests = questsData.filter(q => !currentQuest || q.id !== currentQuest.id);
+        if (availableQuests.length === 0 && questsData.length > 0) {
+             currentQuest = questsData[Math.floor(Math.random() * questsData.length)];
+        } else if (availableQuests.length > 0) {
+            currentQuest = availableQuests[Math.floor(Math.random() * availableQuests.length)];
+        } else {
+            currentQuest = null;
+        }
+
+        if (currentQuest) {
+            currentQuest.isCompleted = false;
+            questProgress = 0;
+            if (currentQuest.type === 'earn') moneyEarnedForQuest = 0;
+            if (currentQuest.type === 'serve') customersServedForQuest = 0;
+        }
+        renderQuest();
+    }
+
+    function renderQuest() {
+        if (!currentQuest) {
+            questTextEl.textContent = "Şu anlık özel bir görevin yok.";
+            questProgressEl.textContent = "-";
+            questRewardEl.textContent = "-";
+            return;
+        }
+        questTextEl.textContent = currentQuest.text;
+        let progressDisplay = questProgress;
+        if (currentQuest.type === 'earn') progressDisplay = moneyEarnedForQuest;
+        if (currentQuest.type === 'serve') progressDisplay = customersServedForQuest;
+
+        questProgressEl.textContent = `${progressDisplay} / ${currentQuest.goal}`;
+        questRewardEl.textContent = `${currentQuest.reward.money} TL, ${currentQuest.reward.xp} XP`;
+    }
+
+    function updateQuestProgressOnAction(actionType, targetItem, amount) {
+        if (!currentQuest || currentQuest.isCompleted) return;
+
+        let progressIncreased = false;
+        if (currentQuest.type === actionType) {
+            if (currentQuest.target === 'any' || currentQuest.target === targetItem) {
+                if (actionType === 'earn') {
+                    moneyEarnedForQuest += amount;
+                    questProgress = moneyEarnedForQuest;
+                } else if (actionType === 'serve') {
+                    customersServedForQuest += amount;
+                    questProgress = customersServedForQuest;
+                } else {
+                    questProgress += amount;
+                }
+                progressIncreased = true;
+            }
+        }
+
+        if (progressIncreased && questProgress >= currentQuest.goal) {
+            showMessage(`Görev Tamamlandı: ${currentQuest.text}! Ödül: ${currentQuest.reward.money} TL, ${currentQuest.reward.xp} XP`, false);
+            money += currentQuest.reward.money;
+            addXP(currentQuest.reward.xp);
+            updateMoneyDisplay();
+            currentQuest.isCompleted = true;
+            setTimeout(assignNewQuest, 1000);
+        }
+        renderQuest();
+        saveGame();
+    }
+
+    function openModal(modalId) {
+        if (modalId === 'upgrades-modal') renderUpgrades();
+        document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function renderUpgrades() {
+        upgradesListEl.innerHTML = '';
+        for (const key in upgradesData) {
+            const upgrade = upgradesData[key];
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'upgrade-item';
+            itemDiv.innerHTML = `
+                <p><strong>${upgrade.name}</strong> (${upgrade.cost} TL)</p>
+                <p>${upgrade.description}</p>
+            `;
+            const buyButton = document.createElement('button');
+            buyButton.textContent = upgrade.purchased ? "Alındı" : "Satın Al";
+            buyButton.disabled = upgrade.purchased || money < upgrade.cost;
+            buyButton.onclick = () => buyUpgrade(key);
+            itemDiv.appendChild(buyButton);
+            upgradesListEl.appendChild(itemDiv);
+        }
+    }
+
+    function buyUpgrade(key) {
+        const upgrade = upgradesData[key];
+        if (!upgrade.purchased && money >= upgrade.cost) {
+            money -= upgrade.cost;
+            upgrade.purchased = true;
+            if (typeof upgrade.apply === 'function') {
+                upgrade.apply();
+            }
+            showMessage(`${upgrade.name} satın alındı!`, false);
+            updateMoneyDisplay();
+            renderUpgrades();
+            saveGame();
+        } else if (upgrade.purchased) {
+            showMessage("Bu geliştirmeyi zaten satın aldınız.", true);
+        } else {
+            showMessage("Yeterli paranız yok!", true);
+        }
+    }
+
+    function advanceDay() {
+        gameDay++;
+        updateDayDisplay();
+        assignNewQuest();
+        saveGame();
+    }
+
     function saveGame() {
-        localStorage.setItem('cafeMoneyV3', money);
-        localStorage.setItem('cafePlayerMaterialsV3', JSON.stringify(playerMaterials));
-        localStorage.setItem('cafePreparedProductsV3', JSON.stringify(preparedProducts));
-        localStorage.setItem('cafeTablesV3', JSON.stringify(tables));
+        const gameState = {
+            money, level, xp, xpToNextLevel, gameDay,
+            playerMaterials, preparedProducts,
+            tables: tables.map(t => ({ 
+                ...t,
+                customerSpawnTimerId: undefined 
+            })),
+            upgradesData: JSON.parse(JSON.stringify(upgradesData)),
+            currentQuest: currentQuest ? JSON.parse(JSON.stringify(currentQuest)) : null,
+            questProgress,
+            moneyEarnedForQuest, customersServedForQuest,
+            CUSTOMER_EAT_TIME_BASE,
+        };
+        localStorage.setItem('lezzetDuragiV10', JSON.stringify(gameState)); 
     }
 
     function loadGame() {
-        money = parseInt(localStorage.getItem('cafeMoneyV3')) || 100;
-        playerMaterials = JSON.parse(localStorage.getItem('cafePlayerMaterialsV3')) || {};
-        preparedProducts = JSON.parse(localStorage.getItem('cafePreparedProductsV3')) || {};
-        const savedTables = JSON.parse(localStorage.getItem('cafeTablesV3'));
+        const savedState = JSON.parse(localStorage.getItem('lezzetDuragiV10'));
+        if (savedState) {
+            money = savedState.money || 100;
+            level = savedState.level || 1;
+            xp = savedState.xp || 0;
+            xpToNextLevel = savedState.xpToNextLevel || 100;
+            gameDay = savedState.gameDay || 1;
+            playerMaterials = savedState.playerMaterials || {};
+            preparedProducts = savedState.preparedProducts || {};
 
-        if (savedTables && savedTables.length === TABLE_COUNT) {
-            tables = savedTables;
-            tables.forEach(table => {
-                if (table.orderTimer) clearTimeout(table.orderTimer);
-                 // Eğer müşteri yeme durumundaysa ve sayfa yenilendiyse, yeme süresini baştan başlatabiliriz
-                // veya daha karmaşık bir şekilde kalan süreyi saklayıp devam ettirebiliriz.
-                // Basitlik için, yükleme sonrası 'eating' durumundaki müşteriler hemen 'waiting_payment'e geçebilir.
-                if (table.isOccupied && table.status === 'eating') {
-                     table.status = 'waiting_payment'; // Veya yeme süresini yeniden başlat
-                }
-            });
+            CUSTOMER_EAT_TIME_BASE = savedState.CUSTOMER_EAT_TIME_BASE || 7000;
+            CUSTOMER_EAT_TIME = CUSTOMER_EAT_TIME_BASE;
+
+            if (savedState.upgradesData) {
+                 Object.keys(upgradesData).forEach(key => {
+                    if (savedState.upgradesData[key]) {
+                        upgradesData[key].purchased = savedState.upgradesData[key].purchased;
+                        if(upgradesData[key].purchased && typeof upgradesData[key].apply === 'function' ) {
+                            if (key === 'fastService') { // Sadece fastService için apply'ı doğrudan çağır
+                                upgradesData[key].apply();
+                            }
+                            // attractiveSign gibi diğerleri için apply'ı yüklemede çağırmaya gerek yok, etkileri dolaylı
+                        }
+                    }
+                });
+            }
+
+            currentQuest = savedState.currentQuest || null;
+            questProgress = savedState.questProgress || 0;
+            moneyEarnedForQuest = savedState.moneyEarnedForQuest || 0;
+            customersServedForQuest = savedState.customersServedForQuest || 0;
+
+            if (savedState.tables && savedState.tables.length === TABLE_COUNT) {
+                tables = savedState.tables.map(savedTable => ({
+                    ...savedTable,
+                    customerSpawnTimerId: null 
+                }));
+
+                tables.forEach((table, tableIndex) => {
+                    if (table.orderTimer) clearTimeout(table.orderTimer);
+                    if (table.patienceTimer) clearTimeout(table.patienceTimer);
+
+                    if (table.isOccupied && table.status === 'eating') {
+                        const timePassedSinceStatusChange = Date.now() - (table.lastStatusChangeTime || (Date.now() - CUSTOMER_EAT_TIME) );
+                        const remainingEatTime = CUSTOMER_EAT_TIME - timePassedSinceStatusChange;
+                        if (remainingEatTime <= 0) {
+                            table.status = 'waiting_payment';
+                        } else {
+                            table.orderTimer = setTimeout(() => {
+                                if (table.isOccupied && table.status === 'eating') {
+                                    table.status = 'waiting_payment';
+                                    renderTables();
+                                    saveGame();
+                                }
+                            }, remainingEatTime);
+                        }
+                    } else if (table.isOccupied && table.status === 'waiting_order') {
+                        const timePassedSinceWait = Date.now() - (table.lastStatusChangeTime || Date.now());
+                        const remainingPatienceTime = CUSTOMER_PATIENCE_TOTAL - timePassedSinceWait;
+                        table.patience = (remainingPatienceTime / CUSTOMER_PATIENCE_TOTAL) * 100;
+                        if (table.patience > 0) {
+                            startPatienceTimer(tableIndex);
+                        } else { // Sabır zaten bitmişse
+                            customerLeavesAngrily(tableIndex); // Müşteri hemen ayrılır
+                        }
+                    }
+                });
+            } else {
+                initializeTables();
+            }
         } else {
-            initializeTables(); 
+            initializeTables();
+            if (questsData.length > 0) assignNewQuest();
         }
-        
+    }
+
+    function actualGameStart() {
+        mainMenuModal.style.display = 'none';
+
+        document.body.style.display = 'block';
+        document.body.style.alignItems = '';
+        document.body.style.justifyContent = '';
+        document.body.style.minHeight = '';
+        document.body.style.padding = '20px';
+
+        gameContainer.style.display = 'block';
+
+        // ARKA PLAN MÜZİĞİNİ BAŞLAT
+        const backgroundMusic = document.getElementById('arkaplanMuzik');
+        if (backgroundMusic) {
+          // İsteğe bağlı: Müziğin ses seviyesini ayarlayabilirsiniz (0.0 ile 1.0 arasında). Örneğin %50 ses için:
+          // backgroundMusic.volume = 0.5;
+          
+          backgroundMusic.play().catch(error => {
+            console.warn("Arka plan müziği otomatik başlatılamadı. Tarayıcı politikaları engellemiş olabilir veya dosya yolu hatalı olabilir.", error);
+            // Kullanıcıya bir mesaj gösterebilirsiniz.
+            // showMessage("Müzik başlatılamadı. Tarayıcı ayarlarınızı kontrol edin veya dosya yolunu doğrulayın.", true);
+          });
+        }
+
+        renderBuyMaterials();
+        renderMenu();
+
+        loadGame();
+
         updateMoneyDisplay();
+        updateXPBarDisplay();
+        updateDayDisplay();
         renderPlayerMaterials();
         renderPreparedProducts();
         renderTables();
+        renderUpgrades();
+
+        if (!currentQuest && questsData.length > 0) {
+            assignNewQuest();
+        } else if (currentQuest) {
+            renderQuest();
+        }
 
         tables.forEach((table, index) => {
             if (!table.isOccupied) {
-                 setTimeout(() => trySpawnCustomer(), Math.random() * 3000 + (index * 500)); 
+                scheduleNextCustomerForTable(index);
+            }
+            // Yüklemeden sonra müşteri masada sabrı tükenmiş olarak kaldıysa kontrol et
+            if (table.isOccupied && table.status === 'waiting_order' && table.patience <= 0) {
+                customerLeavesAngrily(index);
             }
         });
+
+        if(dayTimer) clearInterval(dayTimer);
+        dayTimer = setInterval(advanceDay, DAY_DURATION);
     }
 
     function initGame() {
-        renderBuyMaterials();
-        renderMenu();
-        if (tables.length === 0) initializeTables(); 
-        loadGame();
-        
-        setInterval(trySpawnCustomer, 15000); // Her 15 saniyede bir yeni müşteri getirmeyi dene
+        gameContainer.style.display = 'none';
+        mainMenuModal.style.display = 'flex';
+        startGameBtn.onclick = actualGameStart;
     }
 
     window.onload = initGame;
